@@ -1,0 +1,39 @@
+name: Release Action
+run-name: Release Action ${{ github.ref_name }}
+on:
+  push:
+    tags: [ "release-*" ]
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Make
+        run: make
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: bin.zip
+          path: bin
+  release:
+    name: Release
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Download Artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: bin.zip
+          skip-decompress: true
+      - name: Release
+        run: gh release create "$GITHUB_REF_NAME" bin.zip
+        env:
+          GH_TOKEN: ${{ github.token }}
