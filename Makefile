@@ -12,7 +12,7 @@ SRCDIR  = src
 .PHONY: all clean
 all: $(EXE)
 clean:
-	$(RM) $(BIN)
+	$(RM) $(BIN) $(OBJ)
 $(EXE): $(OBJ)
 	@echo $@
 	@mkdir -p $(dir $@)
