@@ -7,33 +7,35 @@ env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 jobs:
   build:
-    name: Build
+    name: Build Job
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
-      - name: Checkout
+      - name: Checkout Step
         uses: actions/checkout@v7
-      - name: Make
+      - name: Make Step
         run: make
-      - name: Upload Artifact
+      - name: Upload Artifact Step
         uses: actions/upload-artifact@v7
         with:
           name: bin.zip
           path: bin
   release:
-    name: Release
+    name: Release Job
     needs: build
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     permissions:
       contents: write
     steps:
-      - name: Checkout
+      - name: Checkout Step
         uses: actions/checkout@v7
-      - name: Download Artifact
+      - name: Download Artifact Step
         uses: actions/download-artifact@v8
         with:
           name: bin.zip
           skip-decompress: true
-      - name: Release
+      - name: Release Step
         run: gh release create "$GITHUB_REF_NAME" bin.zip
         env:
           GH_TOKEN: ${{ github.token }}
