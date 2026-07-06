@@ -1,7 +1,12 @@
-#include <stdio.h>
+/* Copyright (C) 2026 Taichi Murakami. */
+#include "viewer.h"
 
 int main (int argc, char *argv [])
 {
-	printf ("Hello, world!\n");
-	return 0;
+	GApplication *application;
+	int status;
+	application = viewer_application_new (VIEWER_APPLICATION_ID);
+	status = g_application_run (application, argc, argv);
+	g_object_unref (application);
+	return status;
 }
