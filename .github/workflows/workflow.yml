@@ -1,9 +1,8 @@
-name: CodeQL Advanced
-run-name: CodeQL Advanced ${{ github.ref_name }}
+name: Workflows Analysis
 on:
   push:
     branches: [ "main" ]
-    paths: [ "src" ]
+    paths: [ ".github/workflows" ]
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 jobs:
@@ -20,13 +19,13 @@ jobs:
       fail-fast: false
       matrix:
         include:
-        - language: c-cpp
-          build-mode: autobuild
+        - language: actions
+          build-mode: none
     steps:
     - name: Checkout Repository
       uses: actions/checkout@v7
       with:
-        sparse-checkout: src
+        sparse-checkout: .github/workflows
     - name: Initialize CodeQL
       uses: github/codeql-action/init@v4
       with:
