@@ -13,15 +13,13 @@ SRC     = $(addprefix $(SRCDIR)/, app.c document.c main.c)
 SRCDIR  = src
 .PHONY: all build clean
 all:
-	@$(MAKE) build "CFLAGS = $(CFLAGS) $(DNDEBUG)"
+	$(MAKE) build "CFLAGS = $(CFLAGS) $(DNDEBUG)"
 build: $(EXE)
 clean:
 	$(RM) $(BIN) $(OBJ)
 $(EXE): $(OBJ)
-	@echo $@
-	@mkdir -p $(dir $@)
-	@$(CC) $(CFLAGS) -o $@ $(OBJ) $(LIBS)
+	mkdir -p $(dir $@)
+	$(CC) $(CFLAGS) -o $@ $(OBJ) $(LIBS)
 $(OBJ): $(OBJDIR)/%.o: $(SRCDIR)/%.c $(INC)
-	@echo $@
-	@mkdir -p $(dir $@)
-	@$(CC) $(CFLAGS) -c -o $@ $<
+	mkdir -p $(dir $@)
+	$(CC) $(CFLAGS) -c -o $@ $<
