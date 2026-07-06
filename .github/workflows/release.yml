@@ -1,41 +1,25 @@
-name: Release Action
-run-name: Release Action ${{ github.ref_name }}
+name: Release Build
+run-name: Release Build ${{ github.ref_name }}
 on:
   push:
     tags: [ "release-*" ]
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 jobs:
-  build:
-    name: Build Job
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    steps:
-      - name: Checkout Step
-        uses: actions/checkout@v7
-      - name: Make Step
-        run: make
-      - name: Upload Artifact Step
-        uses: actions/upload-artifact@v7
-        with:
-          name: bin.zip
-          path: bin
   release:
-    name: Release Job
-    needs: build
+    name: Release
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
       contents: write
     steps:
-      - name: Checkout Step
+      - name: Checkout Repository
         uses: actions/checkout@v7
-      - name: Download Artifact Step
-        uses: actions/download-artifact@v8
-        with:
-          name: bin.zip
-          skip-decompress: true
-      - name: Release Step
-        run: gh release create "$GITHUB_REF_NAME" bin.zip
+      - name: Make Artifact
+        run: make
+      - name: Archive Artifact
+        run: tar -cvzf bin.tar.gz bin
+      - name: Release Artifact
+        run: gh release create "$GITHUB_REF_NAME" bin.tar.gz
         env:
           GH_TOKEN: ${{ github.token }}
