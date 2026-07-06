@@ -15,6 +15,8 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v7
+      - name: Setup Environment
+        uses: ./.github/actions/setup
       - name: Make Artifact
         run: make
       - name: Archive Artifact
