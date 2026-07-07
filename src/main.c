@@ -1,6 +1,10 @@
 /* Copyright (C) 2026 Taichi Murakami. */
+#include <gtk/gtk.h>
 #include "viewer.h"
 
+/*
+アプリケーションのメイン エントリ ポイントです。
+*/
 int main (int argc, char *argv [])
 {
 	GApplication *application;
