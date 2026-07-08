@@ -2,7 +2,8 @@
 #include <gtk/gtk.h>
 #include "viewer.h"
 #define DEFINE_ACCELS(NAME, ...) static const char *NAME [] = { __VA_ARGS__ }
-#define SUPER_CLASS viewer_application_parent_class
+#define APPLICATION_FLAGS       G_APPLICATION_HANDLES_OPEN
+#define SUPER_CLASS             viewer_application_parent_class
 
 /* クラスのインスタンス */
 struct _ViewerApplication
@@ -17,7 +18,7 @@ struct _ViewerApplicationAccelEntry
 	const char *const *accels;
 };
 
-typedef struct _ViewerApplicationAccelEntry ACCELENTRY;
+typedef struct _ViewerApplicationAccelEntry ViewerApplicationAccelEntry;
 static void accelerate (GtkApplication *application);
 static void activate (GApplication *application);
 static void activate_new (GSimpleAction *action, GVariant *parameter, void *application);
@@ -33,7 +34,7 @@ DEFINE_ACCELS (ACCELS_QUIT, "<Ctrl>q", NULL);
 DEFINE_ACCELS (ACCELS_SHORTCUTS, "<Ctrl>F1", "<Ctrl>question", "<Ctrl>slash", NULL);
 
 /* キーボード ショートカット */
-static const ACCELENTRY ACCEL_ENTRIES [] =
+static const ViewerApplicationAccelEntry ACCEL_ENTRIES [] =
 {
 	{ "app.new", ACCELS_NEW },
 	{ "win.quit", ACCELS_QUIT },
@@ -51,7 +52,7 @@ static const GActionEntry ACTION_ENTRIES [] =
 */
 static void accelerate (GtkApplication *application)
 {
-	const ACCELENTRY *entries;
+	const ViewerApplicationAccelEntry *entries;
 	int n;
 	entries = ACCEL_ENTRIES;
 
@@ -133,7 +134,7 @@ GApplication *viewer_application_new (const char *application_id)
 {
 	return g_object_new (VIEWER_TYPE_APPLICATION,
 		"application-id", application_id,
-		"flags", G_APPLICATION_HANDLES_OPEN,
+		"flags", APPLICATION_FLAGS,
 		NULL);
 }
 

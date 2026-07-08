@@ -11,9 +11,16 @@
 G_DECLARE_FINAL_TYPE (ViewerApplication,    viewer_application,     VIEWER, APPLICATION,     GtkApplication);
 G_DECLARE_FINAL_TYPE (ViewerDocumentWindow, viewer_document_window, VIEWER, DOCUMENT_WINDOW, GtkApplicationWindow);
 
-void viewer_about_dialog_run (GtkWindow *parent);
-GApplication *viewer_application_new (const char *application_id);
-GtkWidget *viewer_document_window_new (GApplication *application);
+/* MAIN */
+gboolean viewer_is_debug (void);
 
+/* ABOUT DIALOG */
+void viewer_about_dialog_run (GtkWindow *parent);
+
+/* APPLICATION */
+GApplication *viewer_application_new (const char *application_id);
+
+/* DOCUMENT WINDOW */
+GtkWidget *viewer_document_window_new (GApplication *application);
 GFile *viewer_document_window_get_file (ViewerDocumentWindow *self);
 void viewer_document_window_set_file (ViewerDocumentWindow *self, GFile *file);

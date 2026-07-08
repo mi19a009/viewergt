@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist>
+	<schema id="com.github.mi19a009.PictureViewer.window" path="/com/github/mi19a009/PictureViewer/window/">
+		<key name="maximized" type="b">
+			<default>false</default>
+			<summary>Window Maximized</summary>
+		</key>
+		<key name="size" type="(ii)">
+			<default>(600, 400)</default>
+			<summary>Window Width and Height</summary>
+		</key>
+	</schema>
+</schemalist>
