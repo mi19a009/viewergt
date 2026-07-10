@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=Picture Viewer
+Comment=Picture Viewer
+Exec=
+Icon=
+Terminal=false
+Type=Application
+StartupNotify=true

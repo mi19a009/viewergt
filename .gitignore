@@ -1,3 +1,5 @@
 # Git Ignore
 bin
 obj
+resource.c
+*.valid
