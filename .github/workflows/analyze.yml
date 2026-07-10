@@ -3,10 +3,6 @@ on:
   pull_request:
     branches:
       - main
-    paths:
-      - '**.c'
-      - '**.h'
-      - '**.yml'
   workflow_dispatch:
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
@@ -32,9 +28,9 @@ jobs:
     - name: Checkout Repository
       uses: actions/checkout@v7
       with:
-        sparse-checkout:
-          .github/actions
-          .github/workflows
+        sparse-checkout: |
+          .github
+          include
           src
     - name: Initialize CodeQL
       uses: github/codeql-action/init@v4
