@@ -1,11 +1,9 @@
-name: Setup GTK
-description: Setup GTK
+name: Setup
+description: Update and install GTK.
 runs:
   using: composite
   steps:
-    - run: sudo apt update
-      shell: sh
-    - run: sudo apt-get update
-      shell: sh
-    - run: sudo apt-get install -y libgtk-3-dev
-      shell: sh
+    - shell: sh
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libgtk-3-dev

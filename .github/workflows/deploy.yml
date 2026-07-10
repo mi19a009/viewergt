@@ -1,0 +1,30 @@
+name: Main Deployment
+on:
+  push:
+    branches:
+      - main
+env:
+  APP_ARCHIVE: viewer.tar.gz
+  APP_ICON: icons/scalable/actions/viewer.svg
+  APP_DESKTOP: include/viewer.desktop
+  APP_SCHEMA: include/viewer.gschema.xml
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+jobs:
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v7
+      - name: Setup
+        uses: ./.github/actions/setup
+      - name: Build
+        uses: ./.github/actions/build
+      - name: Release
+        uses: ./.github/actions/release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ github.token }}

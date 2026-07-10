@@ -1,8 +1,12 @@
-name: Workflows Analysis
+name: CodeQL Analysis
 on:
-  push:
-    branches: [ "main" ]
-    paths: [ "**.yml" ]
+  pull_request:
+    branches:
+      - main
+    paths:
+      - '**.c'
+      - '**.h'
+      - '**.yml'
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 jobs:
@@ -21,11 +25,16 @@ jobs:
         include:
         - language: actions
           build-mode: none
+        - language: c-cpp
+          build-mode: autobuild
     steps:
     - name: Checkout Repository
       uses: actions/checkout@v7
       with:
-        sparse-checkout: .github/workflows
+        sparse-checkout:
+          .github/actions
+          .github/workflows
+          src
     - name: Initialize CodeQL
       uses: github/codeql-action/init@v4
       with:
@@ -34,4 +43,4 @@ jobs:
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v4
       with:
-        category: "/language:${{matrix.language}}"
+        category: "/language:${{ matrix.language }}"
