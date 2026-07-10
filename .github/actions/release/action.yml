@@ -14,7 +14,7 @@ runs:
   steps:
     - shell: sh
       run: |
-        echo tag=`date +${{ github.ref_name }}-%Y.%m.%d-%H.%M.%S` >> $GITHUB_ENV
+        echo "tag=`date +${{ github.ref_name }}-%Y.%m.%d-%H.%M.%S`" >> $GITHUB_ENV
         git config --global user.name "${{ inputs.user-name }}"
         git config --global user.email "${{ inputs.user-email }}"
         git tag -a ${{ env.tag }} -m "${{ inputs.comment }}"
