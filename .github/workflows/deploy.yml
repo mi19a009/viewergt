@@ -3,11 +3,8 @@ on:
   push:
     branches:
       - main
+  workflow_run:
 env:
-  APP_ARCHIVE: viewer.tar.gz
-  APP_ICON: icons/scalable/actions/viewer.svg
-  APP_DESKTOP: include/viewer.desktop
-  APP_SCHEMA: include/viewer.gschema.xml
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 jobs:
   release:
