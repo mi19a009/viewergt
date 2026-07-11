@@ -6,22 +6,40 @@ on:
   workflow_dispatch:
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  app-desktop: include/viewer.desktop
+  app-icon: icons/scalable/actions/viewer.svg
+  app-schema: include/viewer.gschema.xml
+  archive: viewer.tar.gz
+  tag:
+  user-email: actions@github.com
+  user-name: GitHub Actions
 jobs:
-  release:
-    name: Release
+  deploy:
+    name: Deploy
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
       contents: write
     steps:
+      - name: Perform Date
+        run: echo "tag=`date +${{ github.ref_name }}-%Y.%m.%d-%H.%M.%S`" >> $GITHUB_ENV
       - name: Checkout Repository
         uses: actions/checkout@v7
-      - name: Setup
-        uses: ./.github/actions/setup
-      - name: Build
-        uses: ./.github/actions/build
-      - name: Release
-        uses: ./.github/actions/release
+      - name: Install Library
+        run: sudo apt-get install -y gettext libgtk-3-dev
+      - name: Build Artifact
+        run: make
+      - name: Archive Artifact
+        run: tar -cvzf ${{ env.archive }} Makefile bin ${{ env.app-desktop }} ${{ env.app-icon }} ${{ env.app-schema }}
+      - name: Perform Git Push
+        run: |
+          git config --global user.name "${{ env.user-name }}"
+          git config --global user.email "${{ env.user-email }}"
+          git tag -a ${{ env.tag }} -m "${{ github.workflow }}"
+          git push origin ${{ env.tag }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Perform GitHub Release
+        run: gh release create ${{ env.tag }} ${{ env.archive }}
+        env:
           GH_TOKEN: ${{ github.token }}
