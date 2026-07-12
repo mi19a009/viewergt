@@ -6,10 +6,11 @@
 #define VIEWER_LOGO_ICON_NAME           "viewer"
 #define VIEWER_TITLE                    TEXT ("Picture Viewer")
 #define VIEWER_WINDOW_SETTINGS_ID       VIEWER_APPLICATION_ID ".window"
-#define VIEWER_TYPE_APPLICATION         viewer_application_get_type ()
-#define VIEWER_TYPE_DOCUMENT_WINDOW     viewer_document_window_get_type ()
+#define VIEWER_TYPE_APPLICATION         (viewer_application_get_type ())
+#define VIEWER_TYPE_DOCUMENT_WINDOW     (viewer_document_window_get_type ())
+#define OBJECT_CLASS_INSTALL_PROPERTY(object, PROPERTY, PSPEC) g_object_class_install_property ((object), PROPERTY ##_ID, PSPEC (PROPERTY))
 #define OPTION_ENTRY_COLUMN(OPTION) OPTION ##_LONG_NAME, OPTION ##_SHORT_NAME, OPTION ##_FLAGS, OPTION ##_ARG, OPTION ##_ARG_DATA, OPTION ##_DESCRIPTION, OPTION ##_ARG_DESCRIPTION
-
+#define PARAM_SPEC_OBJECT(PROPERTY) g_param_spec_object (PROPERTY ##_NAME, PROPERTY ##_NICK, PROPERTY ##_BLURB, PROPERTY ##_OBJECT_TYPE, PROPERTY ##_FLAGS)
 #ifdef NDEBUG
 #define VIEWER_PRINT(format, ...)
 #else
