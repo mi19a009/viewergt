@@ -9,6 +9,7 @@
 #define WINDOW_SETTINGS_SIZE            "size"
 #define WINDOW_SETTINGS_SIZE_FORMAT     "(ii)"
 #define WINDOW_STATE_WITH               (GDK_WINDOW_STATE_WITHDRAWN | GDK_WINDOW_STATE_ICONIFIED | GDK_WINDOW_STATE_MAXIMIZED | GDK_WINDOW_STATE_STICKY | GDK_WINDOW_STATE_FULLSCREEN)
+#define WINDOW_IS_FULLSCREEN(window) (((window)->state & GDK_WINDOW_STATE_FULLSCREEN) != 0)
 
 /* クラスのインスタンス */
 struct _ViewerDocumentWindow
@@ -21,11 +22,15 @@ struct _ViewerDocumentWindow
 };
 
 static void activate_about (GSimpleAction *action, GVariant *parameter, gpointer user_data);
+static void activate_fullscreen (GSimpleAction *action, GVariant *parameter, gpointer user_data);
 static void activate_quit (GSimpleAction *action, GVariant *parameter, gpointer user_data);
+static void activate_unfullscreen (GSimpleAction *action, GVariant *parameter, gpointer user_data);
 static void destroy (GtkWidget *widget);
 static void dispose (GObject *object);
 static void size_allocate (GtkWidget *widget, GtkAllocation *allocation);
+static void update_fullscreen_state (ViewerDocumentWindow *window);
 static void update_window_size (ViewerDocumentWindow *window);
+static void update_window_state (ViewerDocumentWindow *window, const GdkEventWindowState *event);
 static void update_window_title (ViewerDocumentWindow *window);
 static gboolean window_state_event (GtkWidget *widget, GdkEventWindowState *event);
 static void viewer_document_window_class_init (ViewerDocumentWindowClass *window);
@@ -36,8 +41,10 @@ G_DEFINE_FINAL_TYPE (ViewerDocumentWindow, viewer_document_window, GTK_TYPE_APPL
 /* メニュー項目のアクション */
 static const GActionEntry ACTION_ENTRIES [] =
 {
-	{ "show-about", activate_about, NULL, NULL },
-	{ "quit", activate_quit, NULL, NULL },
+	{ "show-about",   activate_about,        NULL, NULL,    NULL },
+	{ "fullscreen",   activate_fullscreen,   NULL, "false", NULL },
+	{ "quit",         activate_quit,         NULL, NULL,    NULL },
+	{ "unfullscreen", activate_unfullscreen, NULL, NULL,    NULL },
 };
 
 /*
@@ -49,11 +56,37 @@ static void activate_about (GSimpleAction *action, GVariant *parameter, gpointer
 }
 
 /*
+ウィンドウを全画面表示します。
+*/
+static void activate_fullscreen (GSimpleAction *action, GVariant *parameter, gpointer user_data)
+{
+	if (WINDOW_IS_FULLSCREEN (VIEWER_DOCUMENT_WINDOW (user_data)))
+	{
+		gtk_window_unfullscreen (GTK_WINDOW (user_data));
+	}
+	else
+	{
+		gtk_window_fullscreen (GTK_WINDOW (user_data));
+	}
+}
+
+/*
 ウィンドウを閉じます。
 */
 static void activate_quit (GSimpleAction *action, GVariant *parameter, gpointer user_data)
 {
 	gtk_window_close (GTK_WINDOW (user_data));
+}
+
+/*
+全画面表示を解除します。
+*/
+static void activate_unfullscreen (GSimpleAction *action, GVariant *parameter, gpointer user_data)
+{
+	if (WINDOW_IS_FULLSCREEN (VIEWER_DOCUMENT_WINDOW (user_data)))
+	{
+		gtk_window_unfullscreen (GTK_WINDOW (user_data));
+	}
 }
 
 /*
@@ -83,6 +116,22 @@ static void size_allocate (GtkWidget *widget, GtkAllocation *allocation)
 }
 
 /*
+フルスクリーン時はメニュー項目にチェックを付けます。
+*/
+static void update_fullscreen_state (ViewerDocumentWindow *window)
+{
+	GAction *action;
+	gboolean state;
+	action = g_action_map_lookup_action (G_ACTION_MAP (window), "fullscreen");
+
+	if (G_IS_SIMPLE_ACTION (action))
+	{
+		state = WINDOW_IS_FULLSCREEN (window);
+		g_simple_action_set_state (G_SIMPLE_ACTION (action), g_variant_new_boolean (state));
+	}
+}
+
+/*
 ウィンドウの大きさを更新します。
 */
 static void update_window_size (ViewerDocumentWindow *window)
@@ -90,6 +139,19 @@ static void update_window_size (ViewerDocumentWindow *window)
 	if ((window->state & WINDOW_STATE_WITH) == 0)
 	{
 		gtk_window_get_size (GTK_WINDOW (window), &window->width, &window->height);
+	}
+}
+
+/*
+ウィンドウの状態を更新します。
+*/
+static void update_window_state (ViewerDocumentWindow *window, const GdkEventWindowState *event)
+{
+	window->state = event->new_window_state;
+
+	if (event->changed_mask & GDK_WINDOW_STATE_FULLSCREEN)
+	{
+		update_fullscreen_state (window);
 	}
 }
 
@@ -121,7 +183,7 @@ static gboolean window_state_event (GtkWidget *widget, GdkEventWindowState *even
 {
 	gboolean status;
 	status = GTK_WIDGET_CLASS (SUPER_CLASS)->window_state_event (widget, event);
-	VIEWER_DOCUMENT_WINDOW (widget)->state = event->new_window_state;
+	update_window_state (VIEWER_DOCUMENT_WINDOW (widget), event);
 	return status;
 }
 

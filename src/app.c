@@ -32,9 +32,11 @@ static void viewer_application_class_init (ViewerApplicationClass *self);
 static void viewer_application_init (ViewerApplication *self);
 
 G_DEFINE_FINAL_TYPE (ViewerApplication, viewer_application, GTK_TYPE_APPLICATION);
+DEFINE_ACCELS (ACCELS_FULLSCREEN, "F11", NULL);
 DEFINE_ACCELS (ACCELS_NEW, "<Ctrl>n", NULL);
 DEFINE_ACCELS (ACCELS_QUIT, "<Ctrl>q", NULL);
 DEFINE_ACCELS (ACCELS_SHORTCUTS, "<Ctrl>F1", "<Ctrl>question", "<Ctrl>slash", NULL);
+DEFINE_ACCELS (ACCELS_UNFULLSCREEN, "Escape", NULL);
 
 /* DEBUG オプション */
 #define DEBUG_OPTION_LONG_NAME          "debug"
@@ -49,8 +51,10 @@ DEFINE_ACCELS (ACCELS_SHORTCUTS, "<Ctrl>F1", "<Ctrl>question", "<Ctrl>slash", NU
 static const ViewerApplicationAccelEntry ACCEL_ENTRIES [] =
 {
 	{ "app.new", ACCELS_NEW },
+	{ "win.fullscreen", ACCELS_FULLSCREEN },
 	{ "win.quit", ACCELS_QUIT },
 	{ "win.show-help-overlay", ACCELS_SHORTCUTS },
+	{ "win.unfullscreen", ACCELS_UNFULLSCREEN },
 };
 
 /* メニュー項目のアクション */

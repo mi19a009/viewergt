@@ -13,7 +13,7 @@
 #ifdef NDEBUG
 #define VIEWER_PRINT(format, ...)
 #else
-#define VIEWER_PRINT(format, ...) g_print (format, __VA_ARGS__)
+#define VIEWER_PRINT(format, ...) g_print ((format), __VA_ARGS__)
 #endif
 
 G_DECLARE_FINAL_TYPE (ViewerApplication,    viewer_application,     VIEWER, APPLICATION,     GtkApplication);
