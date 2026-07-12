@@ -2,33 +2,34 @@
 #include <gtk/gtk.h>
 #include <glib/gi18n.h>
 #include "viewer.h"
-#define DEFAULT_WINDOW_WIDTH            600
-#define DEFAULT_WINDOW_HEIGHT           400
-#define SETTINGS_MAXIMIZED              "maximized"
-#define SETTINGS_WINDOWED_SIZE          "size"
-#define SETTINGS_WINDOWED_SIZE_FORMAT   "(ii)"
 #define SUPER_CLASS                     viewer_document_window_parent_class
+#define WINDOW_DEFAULT_HEIGHT           400
+#define WINDOW_DEFAULT_WIDTH            600
+#define WINDOW_SETTINGS_MAXIMIZED       "maximized"
+#define WINDOW_SETTINGS_SIZE            "size"
+#define WINDOW_SETTINGS_SIZE_FORMAT     "(ii)"
+#define WINDOW_STATE_WITH               (GDK_WINDOW_STATE_WITHDRAWN | GDK_WINDOW_STATE_ICONIFIED | GDK_WINDOW_STATE_MAXIMIZED | GDK_WINDOW_STATE_STICKY | GDK_WINDOW_STATE_FULLSCREEN)
 
 /* クラスのインスタンス */
 struct _ViewerDocumentWindow
 {
 	GtkApplicationWindow parent_instance;
 	GFile *file;
-	int windowed_width;
-	int windowed_height;
-	char maximized;
-	char windowed;
+	int state;
+	int width;
+	int height;
 };
 
-static void activate_about (GSimpleAction *action, GVariant *parameter, void *document);
-static void activate_quit (GSimpleAction *action, GVariant *parameter, void *document);
+static void activate_about (GSimpleAction *action, GVariant *parameter, gpointer user_data);
+static void activate_quit (GSimpleAction *action, GVariant *parameter, gpointer user_data);
 static void destroy (GtkWidget *widget);
 static void dispose (GObject *object);
 static void size_allocate (GtkWidget *widget, GtkAllocation *allocation);
-static void update_window_size (ViewerDocumentWindow *document);
-static void update_window_title (ViewerDocumentWindow *document);
-static void viewer_document_window_class_init (ViewerDocumentWindowClass *self);
-static void viewer_document_window_init (ViewerDocumentWindow *self);
+static void update_window_size (ViewerDocumentWindow *window);
+static void update_window_title (ViewerDocumentWindow *window);
+static gboolean window_state_event (GtkWidget *widget, GdkEventWindowState *event);
+static void viewer_document_window_class_init (ViewerDocumentWindowClass *window);
+static void viewer_document_window_init (ViewerDocumentWindow *window);
 
 G_DEFINE_FINAL_TYPE (ViewerDocumentWindow, viewer_document_window, GTK_TYPE_APPLICATION_WINDOW);
 
@@ -42,17 +43,17 @@ static const GActionEntry ACTION_ENTRIES [] =
 /*
 バージョン情報を表示します。
 */
-static void activate_about (GSimpleAction *action, GVariant *parameter, void *document)
+static void activate_about (GSimpleAction *action, GVariant *parameter, gpointer user_data)
 {
-	viewer_about_dialog_run (GTK_WINDOW (document));
+	viewer_about_dialog_run (GTK_WINDOW (user_data));
 }
 
 /*
 ウィンドウを閉じます。
 */
-static void activate_quit (GSimpleAction *action, GVariant *parameter, void *document)
+static void activate_quit (GSimpleAction *action, GVariant *parameter, gpointer user_data)
 {
-	gtk_window_close (GTK_WINDOW (document));
+	gtk_window_close (GTK_WINDOW (user_data));
 }
 
 /*
@@ -84,32 +85,90 @@ static void size_allocate (GtkWidget *widget, GtkAllocation *allocation)
 /*
 ウィンドウの大きさを更新します。
 */
-static void update_window_size (ViewerDocumentWindow *document)
+static void update_window_size (ViewerDocumentWindow *window)
 {
-	if (document->windowed)
+	if ((window->state & WINDOW_STATE_WITH) == 0)
 	{
-		gtk_window_get_size (GTK_WINDOW (document), &document->windowed_width, &document->windowed_height);
+		gtk_window_get_size (GTK_WINDOW (window), &window->width, &window->height);
 	}
 }
 
 /*
 ウィンドウのタイトルを更新します。
 */
-static void update_window_title (ViewerDocumentWindow *document)
+static void update_window_title (ViewerDocumentWindow *window)
 {
 	char *name;
 	char buffer [256];
 
-	if (document->file)
+	if (window->file)
 	{
-		name = g_file_get_basename (document->file);
+		name = g_file_get_basename (window->file);
 		g_snprintf (buffer, G_N_ELEMENTS (buffer), "%s - %s", name, VIEWER_TITLE);
-		gtk_window_set_title (GTK_WINDOW (document), buffer);
+		gtk_window_set_title (GTK_WINDOW (window), buffer);
 		g_free (name);
 	}
 	else
 	{
-		gtk_window_set_title (GTK_WINDOW (document), VIEWER_TITLE);
+		gtk_window_set_title (GTK_WINDOW (window), VIEWER_TITLE);
+	}
+}
+
+/*
+ウィンドウのフルスクリーン化を追跡します。
+*/
+static gboolean window_state_event (GtkWidget *widget, GdkEventWindowState *event)
+{
+	gboolean status;
+	status = GTK_WIDGET_CLASS (SUPER_CLASS)->window_state_event (widget, event);
+	VIEWER_DOCUMENT_WINDOW (widget)->state = event->new_window_state;
+	return status;
+}
+
+/*
+クラスを初期化します。
+*/
+static void viewer_document_window_class_init (ViewerDocumentWindowClass *window)
+{
+	G_OBJECT_CLASS (window)->dispose = dispose;
+	GTK_WIDGET_CLASS (window)->destroy = destroy;
+	GTK_WIDGET_CLASS (window)->size_allocate = size_allocate;
+	GTK_WIDGET_CLASS (window)->window_state_event = window_state_event;
+}
+
+/*
+ドキュメントのファイルを返します。
+この値を開放してはならない。
+*/
+GFile *viewer_document_window_get_file (ViewerDocumentWindow *window)
+{
+	return window->file;
+}
+
+/*
+クラスのインスタンスを初期化します。
+*/
+static void viewer_document_window_init (ViewerDocumentWindow *window)
+{
+	window->width = WINDOW_DEFAULT_WIDTH;
+	window->height = WINDOW_DEFAULT_HEIGHT;
+	g_action_map_add_action_entries (G_ACTION_MAP (window), ACTION_ENTRIES, G_N_ELEMENTS (ACTION_ENTRIES), window);
+	gtk_window_set_default_size (GTK_WINDOW (window), window->width, window->height);
+	gtk_window_set_icon_name (GTK_WINDOW (window), VIEWER_LOGO_ICON_NAME);
+	gtk_window_set_title (GTK_WINDOW (window), VIEWER_TITLE);
+}
+
+/*
+ウィンドウの設定を読み込んで適用します。
+*/
+void viewer_document_window_load_settings (ViewerDocumentWindow *window, GSettings *settings)
+{
+	g_settings_get (settings, WINDOW_SETTINGS_SIZE, WINDOW_SETTINGS_SIZE_FORMAT, &window->width, &window->height);
+	gtk_window_set_default_size (GTK_WINDOW (window), window->width, window->height);
+
+	if (g_settings_get_boolean (settings, WINDOW_SETTINGS_MAXIMIZED))
+	{
+		gtk_window_maximize (GTK_WINDOW (window));
 	}
 }
 
@@ -124,82 +183,36 @@ GtkWidget *viewer_document_window_new (GtkApplication *application)
 }
 
 /*
-クラスを初期化します。
-*/
-static void viewer_document_window_class_init (ViewerDocumentWindowClass *self)
-{
-	G_OBJECT_CLASS (self)->dispose = dispose;
-	GTK_WIDGET_CLASS (self)->destroy = destroy;
-	GTK_WIDGET_CLASS (self)->size_allocate = size_allocate;
-}
-
-/*
-ドキュメントのファイルを返します。
-この値を開放してはならない。
-*/
-GFile *viewer_document_window_get_file (ViewerDocumentWindow *self)
-{
-	return self->file;
-}
-
-/*
-クラスのインスタンスを初期化します。
-*/
-static void viewer_document_window_init (ViewerDocumentWindow *self)
-{
-	self->windowed = TRUE;
-	self->windowed_width = DEFAULT_WINDOW_WIDTH;
-	self->windowed_height = DEFAULT_WINDOW_HEIGHT;
-	g_action_map_add_action_entries (G_ACTION_MAP (self), ACTION_ENTRIES, G_N_ELEMENTS (ACTION_ENTRIES), self);
-	gtk_window_set_default_size (GTK_WINDOW (self), self->windowed_width, self->windowed_height);
-	gtk_window_set_icon_name (GTK_WINDOW (self), VIEWER_LOGO_ICON_NAME);
-	gtk_window_set_title (GTK_WINDOW (self), VIEWER_TITLE);
-}
-
-/*
-ウィンドウの設定を読み込んで適用します。
-*/
-void viewer_document_window_load_settings (ViewerDocumentWindow *self, GSettings *settings)
-{
-	g_settings_get (settings, SETTINGS_WINDOWED_SIZE, SETTINGS_WINDOWED_SIZE_FORMAT, &self->windowed_width, &self->windowed_height);
-	gtk_window_set_default_size (GTK_WINDOW (self), self->windowed_width, self->windowed_height);
-	self->maximized = g_settings_get_boolean (settings, SETTINGS_MAXIMIZED);
-
-	if (self->maximized)
-	{
-		gtk_window_maximize (GTK_WINDOW (self));
-	}
-}
-
-/*
 ウィンドウの設定を書き込みます。
 */
-void viewer_document_window_save_settings (ViewerDocumentWindow *self, GSettings *settings)
+void viewer_document_window_save_settings (ViewerDocumentWindow *window, GSettings *settings)
 {
-	g_settings_set_boolean (settings, SETTINGS_MAXIMIZED, self->maximized);
-	g_settings_set (settings, SETTINGS_WINDOWED_SIZE, SETTINGS_WINDOWED_SIZE_FORMAT, self->windowed_width, self->windowed_height);
+	gboolean value;
+	g_settings_set (settings, WINDOW_SETTINGS_SIZE, WINDOW_SETTINGS_SIZE_FORMAT, window->width, window->height);
+	value = (window->state & GDK_WINDOW_STATE_MAXIMIZED) != 0;
+	g_settings_set_boolean (settings, WINDOW_SETTINGS_MAXIMIZED, value);
 }
 
 /*
 ドキュメントのファイルを指定します。
 */
-void viewer_document_window_set_file (ViewerDocumentWindow *self, GFile *file)
+void viewer_document_window_set_file (ViewerDocumentWindow *window, GFile *file)
 {
-	if (self->file != file)
+	if (window->file != file)
 	{
-		if (self->file)
+		if (window->file)
 		{
-			g_object_unref (self->file);
+			g_object_unref (window->file);
 		}
 		if (file)
 		{
-			self->file = g_object_ref (file);
+			window->file = g_object_ref (file);
 		}
 		else
 		{
-			self->file = NULL;
+			window->file = NULL;
 		}
 
-		update_window_title (self);
+		update_window_title (window);
 	}
 }
