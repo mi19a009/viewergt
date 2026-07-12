@@ -5,22 +5,24 @@
 #define VIEWER_APPLICATION_ID           "com.github.mi19a009.PictureViewer"
 #define VIEWER_LOGO_ICON_NAME           "viewer"
 #define VIEWER_TITLE                    TEXT ("Picture Viewer")
+#define VIEWER_WINDOW_SETTINGS_ID       VIEWER_APPLICATION_ID ".window"
 #define VIEWER_TYPE_APPLICATION         viewer_application_get_type ()
 #define VIEWER_TYPE_DOCUMENT_WINDOW     viewer_document_window_get_type ()
+#define OPTION_ENTRY_COLUMN(OPTION) OPTION ##_LONG_NAME, OPTION ##_SHORT_NAME, OPTION ##_FLAGS, OPTION ##_ARG, OPTION ##_ARG_DATA, OPTION ##_DESCRIPTION, OPTION ##_ARG_DESCRIPTION
 
 G_DECLARE_FINAL_TYPE (ViewerApplication,    viewer_application,     VIEWER, APPLICATION,     GtkApplication);
 G_DECLARE_FINAL_TYPE (ViewerDocumentWindow, viewer_document_window, VIEWER, DOCUMENT_WINDOW, GtkApplicationWindow);
 
-/* MAIN */
-gboolean viewer_is_debug (void);
-
-/* ABOUT DIALOG */
+/* Viewer About Dialog */
 void viewer_about_dialog_run (GtkWindow *parent);
 
-/* APPLICATION */
+/* Viewer Application */
 GApplication *viewer_application_new (const char *application_id);
+void viewer_application_add_main_option_entries (ViewerApplication *self);
 
-/* DOCUMENT WINDOW */
-GtkWidget *viewer_document_window_new (GApplication *application);
+/* Viewer Document Window */
+GtkWidget *viewer_document_window_new (GtkApplication *application);
 GFile *viewer_document_window_get_file (ViewerDocumentWindow *self);
+void viewer_document_window_load_settings (ViewerDocumentWindow *self, GSettings *settings);
+void viewer_document_window_save_settings (ViewerDocumentWindow *self, GSettings *settings);
 void viewer_document_window_set_file (ViewerDocumentWindow *self, GFile *file);

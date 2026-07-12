@@ -4,24 +4,6 @@
 #include <locale.h>
 #include "viewer.h"
 
-typedef struct _MainOptions
-{
-	gboolean debug;
-} MainOptions;
-
-static MainOptions options;
-
-static void cmd (GApplication *application)
-{
-	const GOptionEntry entries [] =
-	{
-		{ "debug", 0, G_OPTION_FLAG_NONE, G_OPTION_ARG_NONE, &options.debug, "Enable debug.", NULL },
-		{ NULL },
-	};
-
-	g_application_add_main_option_entries (application, entries);
-}
-
 /*
 メッセージ カタログへのパスを指定します。
 */
@@ -52,24 +34,16 @@ static void init (void)
 }
 
 /*
-アプリケーションのメイン エントリ ポイントです。
+GTK アプリケーションを実行します。
 */
-int main (int argc, char *argv [])
+int main (int argc, char **argv)
 {
 	GApplication *application;
 	int status;
 	init ();
 	application = viewer_application_new (VIEWER_APPLICATION_ID);
-	cmd (application);
+	viewer_application_add_main_option_entries (VIEWER_APPLICATION (application));
 	status = g_application_run (application, argc, argv);
 	g_object_unref (application);
 	return status;
-}
-
-/*
-デバッグしているかどうかを表す値を取得します。
-*/
-gboolean viewer_is_debug (void)
-{
-	return options.debug;
 }
