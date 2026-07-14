@@ -1,9 +1,12 @@
 /* Copyright (C) 2026 Taichi Murakami. */
 #include <gtk/gtk.h>
+#include <glib/gi18n.h>
 #include "viewer.h"
-#define DEFINE_ACCELS(NAME, ...) static const char *NAME [] = { __VA_ARGS__ }
+#define ACTION_NEW              "new"
+#define ACTION_OPEN             "open"
 #define APPLICATION_FLAGS       G_APPLICATION_HANDLES_OPEN
 #define SUPER_CLASS             viewer_application_parent_class
+#define DEFINE_ACCELS(NAME, ...) static const char *NAME [] = { __VA_ARGS__ }
 
 /* クラスのインスタンス */
 struct _ViewerApplication
@@ -13,27 +16,30 @@ struct _ViewerApplication
 };
 
 /* キーボード ショートカット */
-struct _ViewerApplicationAccelEntry
+typedef struct _ViewerApplicationAccelEntry
 {
 	const char *detailed_action_name;
 	const char *const *accels;
-};
+} ViewerApplicationAccelEntry;
 
-typedef struct _ViewerApplicationAccelEntry ViewerApplicationAccelEntry;
-static void activate (GApplication *application);
-static void activate_new (GSimpleAction *action, GVariant *parameter, void *application);
-static GtkWidget *create_document_window (ViewerApplication *application);
-static void destroy (GtkWidget *widget, gpointer user_data);
-static void load (ViewerDocumentWindow *window);
-static void open (GApplication *application, GFile **files, int n_files, const char *hint);
-static void startup (GApplication *application);
-static void startup_accels (GtkApplication *application);
-static void viewer_application_class_init (ViewerApplicationClass *self);
-static void viewer_application_init (ViewerApplication *self);
+static void       activate                      (GApplication *application);
+static void       activate_new                  (GSimpleAction *action, GVariant *parameter, gpointer user_data);
+static void       activate_open                 (GSimpleAction *action, GVariant *parameter, gpointer user_data);
+static GtkWidget *create_document_window        (ViewerApplication *application);
+static void       destroy                       (GtkWidget *widget, gpointer user_data);
+static gboolean   has_file                      (GtkWindow *window);
+static void       load                          (ViewerDocumentWindow *window);
+static void       open                          (GApplication *application, GFile **files, int n_files, const char *hint);
+static void       startup                       (GApplication *application);
+static void       startup_accels                (GtkApplication *application);
+static void       viewer_application_class_init (ViewerApplicationClass *application_class);
+static void       viewer_application_init       (ViewerApplication *application);
 
+/* Viewer Application クラス */
 G_DEFINE_FINAL_TYPE (ViewerApplication, viewer_application, GTK_TYPE_APPLICATION);
 DEFINE_ACCELS (ACCELS_FULLSCREEN, "F11", NULL);
 DEFINE_ACCELS (ACCELS_NEW, "<Ctrl>n", NULL);
+DEFINE_ACCELS (ACCELS_OPEN, "<Ctrl>o", NULL);
 DEFINE_ACCELS (ACCELS_QUIT, "<Ctrl>q", NULL);
 DEFINE_ACCELS (ACCELS_SHORTCUTS, "<Ctrl>F1", "<Ctrl>question", "<Ctrl>slash", NULL);
 DEFINE_ACCELS (ACCELS_UNFULLSCREEN, "Escape", NULL);
@@ -51,6 +57,7 @@ DEFINE_ACCELS (ACCELS_UNFULLSCREEN, "Escape", NULL);
 static const ViewerApplicationAccelEntry ACCEL_ENTRIES [] =
 {
 	{ "app.new", ACCELS_NEW },
+	{ "app.open", ACCELS_OPEN },
 	{ "win.fullscreen", ACCELS_FULLSCREEN },
 	{ "win.quit", ACCELS_QUIT },
 	{ "win.show-help-overlay", ACCELS_SHORTCUTS },
@@ -60,7 +67,8 @@ static const ViewerApplicationAccelEntry ACCEL_ENTRIES [] =
 /* メニュー項目のアクション */
 static const GActionEntry ACTION_ENTRIES [] =
 {
-	{ "new", activate_new, NULL, NULL, NULL, { 0 }},
+	{ ACTION_NEW,  activate_new,  NULL, NULL, NULL },
+	{ ACTION_OPEN, activate_open, NULL, NULL, NULL },
 };
 
 /*
@@ -82,11 +90,39 @@ static void activate (GApplication *application)
 /*
 新しいウィンドウを表示します。
 */
-static void activate_new (GSimpleAction *action, GVariant *parameter, void *application)
+static void activate_new (GSimpleAction *action, GVariant *parameter, gpointer user_data)
 {
 	GtkWindow *window;
-	window = GTK_WINDOW (create_document_window (VIEWER_APPLICATION (application)));
+	window = GTK_WINDOW (create_document_window (VIEWER_APPLICATION (user_data)));
 	gtk_window_present (window);
+}
+
+/*
+ファイルを開くダイアログを表示します。
+*/
+static void activate_open (GSimpleAction *action, GVariant *parameter, gpointer user_data)
+{
+	GtkWindow *window;
+	GtkWidget *dialog;
+	GFile *file;
+	window = gtk_application_get_active_window (GTK_APPLICATION (user_data));
+	dialog = viewer_file_chooser_dialog_new (window);
+
+	if (gtk_dialog_run (GTK_DIALOG (dialog)) == GTK_RESPONSE_ACCEPT)
+	{
+		file = gtk_file_chooser_get_file (GTK_FILE_CHOOSER (dialog));
+
+		if (has_file (window))
+		{
+			window = GTK_WINDOW (create_document_window (VIEWER_APPLICATION (user_data)));
+		}
+
+		viewer_document_window_set_file (VIEWER_DOCUMENT_WINDOW (window), file);
+		gtk_window_present (window);
+		g_object_unref (file);
+	}
+
+	gtk_widget_destroy (dialog);
 }
 
 /*
@@ -120,6 +156,16 @@ static void destroy (GtkWidget *widget, gpointer user_data)
 }
 
 /*
+指定したウィンドウがファイルを参照している場合は TRUE を返します。
+*/
+static gboolean has_file (GtkWindow *window)
+{
+	return
+		VIEWER_IS_DOCUMENT_WINDOW (window) &&
+		viewer_document_window_get_file (VIEWER_DOCUMENT_WINDOW (window));
+}
+
+/*
 ウィンドウに環境設定を適用します。
 */
 static void load (ViewerDocumentWindow *window)
@@ -143,7 +189,7 @@ static void open (GApplication *application, GFile **files, int n_files, const c
 		window = gtk_application_get_active_window (GTK_APPLICATION (application));
 		n = 0;
 
-		if (VIEWER_IS_DOCUMENT_WINDOW (window) && !viewer_document_window_get_file (VIEWER_DOCUMENT_WINDOW (window)))
+		if (!has_file (window))
 		{
 			viewer_document_window_set_file (VIEWER_DOCUMENT_WINDOW (window), files [n++]);
 			gtk_window_present (window);
@@ -213,16 +259,16 @@ void viewer_application_add_main_option_entries (ViewerApplication *self)
 /*
 クラスを初期化します。
 */
-static void viewer_application_class_init (ViewerApplicationClass *self)
+static void viewer_application_class_init (ViewerApplicationClass *application_class)
 {
-	G_APPLICATION_CLASS (self)->activate = activate;
-	G_APPLICATION_CLASS (self)->open = open;
-	G_APPLICATION_CLASS (self)->startup = startup;
+	G_APPLICATION_CLASS (application_class)->activate = activate;
+	G_APPLICATION_CLASS (application_class)->open = open;
+	G_APPLICATION_CLASS (application_class)->startup = startup;
 }
 
 /*
 クラスのインスタンスを初期化します。
 */
-static void viewer_application_init (ViewerApplication *self)
+static void viewer_application_init (ViewerApplication *application)
 {
 }

@@ -36,3 +36,6 @@ void       viewer_document_window_load_settings (ViewerDocumentWindow *window, G
 GtkWidget *viewer_document_window_new           (GtkApplication *application);
 void       viewer_document_window_save_settings (ViewerDocumentWindow *window, GSettings *settings);
 void       viewer_document_window_set_file      (ViewerDocumentWindow *window, GFile *file);
+
+/* Viewer File Chooser Dialog */
+GtkWidget *viewer_file_chooser_dialog_new (GtkWindow *parent);

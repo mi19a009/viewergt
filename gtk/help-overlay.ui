@@ -32,6 +32,13 @@
 								<property name="visible">true</property>
 							</object>
 						</child>
+						<child>
+							<object class="GtkShortcutsShortcut">
+								<property name="action-name">app.open</property>
+								<property name="title" translatable="true">Open File</property>
+								<property name="visible">true</property>
+							</object>
+						</child>
 					</object>
 				</child>
 				<child>
