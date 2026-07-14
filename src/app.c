@@ -164,6 +164,7 @@ static void open (GApplication *application, GFile **files, int n_files, const c
 static void startup (GApplication *application)
 {
 	G_APPLICATION_CLASS (SUPER_CLASS)->startup (application);
+	gtk_window_set_default_icon_name (VIEWER_LOGO_ICON_NAME);
 	g_action_map_add_action_entries (G_ACTION_MAP (application), ACTION_ENTRIES, G_N_ELEMENTS (ACTION_ENTRIES), application);
 	startup_accels (GTK_APPLICATION (application));
 }

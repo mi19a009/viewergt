@@ -23,6 +23,9 @@ G_DECLARE_FINAL_TYPE (ViewerDocumentWindow, viewer_document_window, VIEWER, DOCU
 /* Viewer About Dialog */
 void viewer_about_dialog_run (GtkWindow *parent);
 
+/* Viewer Alert Dialog */
+void viewer_alert_dialog_run (GtkWindow *parent, const GError *error);
+
 /* Viewer Application */
 GApplication *viewer_application_new (const char *application_id);
 void viewer_application_add_main_option_entries (ViewerApplication *self);

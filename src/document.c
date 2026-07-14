@@ -2,6 +2,10 @@
 #include <gtk/gtk.h>
 #include <glib/gi18n.h>
 #include "viewer.h"
+#define ACTION_ABOUT                    "show-about"
+#define ACTION_CLOSE                    "quit"
+#define ACTION_FULLSCREEN               "fullscreen"
+#define ACTION_UNFULLSCREEN             "unfullscreen"
 #define SUPER_CLASS                     viewer_document_window_parent_class
 #define WINDOW_DEFAULT_HEIGHT           400
 #define WINDOW_DEFAULT_WIDTH            600
@@ -9,8 +13,11 @@
 #define WINDOW_SETTINGS_SIZE            "size"
 #define WINDOW_SETTINGS_SIZE_FORMAT     "(ii)"
 #define WINDOW_STATE_WITH               (GDK_WINDOW_STATE_WITHDRAWN | GDK_WINDOW_STATE_ICONIFIED | GDK_WINDOW_STATE_MAXIMIZED | GDK_WINDOW_STATE_STICKY | GDK_WINDOW_STATE_FULLSCREEN)
-#define WINDOW_IS_FULLSCREEN(window) (((window)->state & GDK_WINDOW_STATE_FULLSCREEN) != 0)
-#define WINDOW_IS_MAXIMIZED(window) (((window)->state & GDK_WINDOW_STATE_MAXIMIZED) != 0)
+#define WINDOW_TEMPLATE_NAME            "/com/github/mi19a009/PictureViewer/gtk/document.ui"
+#define WINDOW_TITLE_CCH                256
+#define WINDOW_TITLE_FORMAT             "%s - %s"
+#define WINDOW_IS_FULLSCREEN(window)    (((window)->state & GDK_WINDOW_STATE_FULLSCREEN) != 0)
+#define WINDOW_IS_MAXIMIZED(window)     (((window)->state & GDK_WINDOW_STATE_MAXIMIZED) != 0)
 
 /* クラスのプロパティ */
 enum _ViewerDocumentWindowProperties
@@ -23,22 +30,27 @@ enum _ViewerDocumentWindowProperties
 struct _ViewerDocumentWindow
 {
 	GtkApplicationWindow parent_instance;
-	GFile *file;
-	int state;
-	int width;
-	int height;
+	GtkWidget *area; /* 描画領域 */
+	GFile *file; /* ユーザーが開いたファイル */
+	GdkPixbuf *pixbuf;
+	int state; /* 現在のウィンドウの状態 */
+	int width; /* ウィンドウ化した場合のウィンドウの幅 */
+	int height; /* ウィンドウ化した場合のウィンドウの高さ */
 };
 
 static void     activate_about                    (GSimpleAction *action, GVariant *parameter, gpointer user_data);
+static void     activate_close                    (GSimpleAction *action, GVariant *parameter, gpointer user_data);
 static void     activate_fullscreen               (GSimpleAction *action, GVariant *parameter, gpointer user_data);
-static void     activate_quit                     (GSimpleAction *action, GVariant *parameter, gpointer user_data);
 static void     activate_unfullscreen             (GSimpleAction *action, GVariant *parameter, gpointer user_data);
-static void     destroy                           (GtkWidget *widget);
 static void     dispose                           (GObject *object);
+static gboolean draw                              (GtkWidget *widget, cairo_t *cairo, gpointer user_data);
+static void     draw_document                     (ViewerDocumentWindow *window, cairo_t *cairo);
 static void     get_property                      (GObject *object, guint property_id, GValue *value, GParamSpec *pspec);
 static void     set_property                      (GObject *object, guint property_id, const GValue *value, GParamSpec *pspec);
 static void     size_allocate                     (GtkWidget *widget, GtkAllocation *allocation);
+static void     update_area                       (ViewerDocumentWindow *window);
 static void     update_fullscreen_state           (ViewerDocumentWindow *window);
+static void     update_pixbuf                     (ViewerDocumentWindow *window);
 static void     update_window_size                (ViewerDocumentWindow *window);
 static void     update_window_state               (ViewerDocumentWindow *window, const GdkEventWindowState *event);
 static void     update_window_title               (ViewerDocumentWindow *window);
@@ -59,10 +71,10 @@ G_DEFINE_FINAL_TYPE (ViewerDocumentWindow, viewer_document_window, GTK_TYPE_APPL
 /* メニュー項目のアクション */
 static const GActionEntry ACTION_ENTRIES [] =
 {
-	{ "show-about",   activate_about,        NULL, NULL,    NULL },
-	{ "fullscreen",   activate_fullscreen,   NULL, "false", NULL },
-	{ "quit",         activate_quit,         NULL, NULL,    NULL },
-	{ "unfullscreen", activate_unfullscreen, NULL, NULL,    NULL },
+	{ ACTION_ABOUT,        activate_about,        NULL, NULL,    NULL },
+	{ ACTION_CLOSE,        activate_close,        NULL, NULL,    NULL },
+	{ ACTION_FULLSCREEN,   activate_fullscreen,   NULL, "false", NULL },
+	{ ACTION_UNFULLSCREEN, activate_unfullscreen, NULL, NULL,    NULL },
 };
 
 /*
@@ -71,6 +83,14 @@ static const GActionEntry ACTION_ENTRIES [] =
 static void activate_about (GSimpleAction *action, GVariant *parameter, gpointer user_data)
 {
 	viewer_about_dialog_run (GTK_WINDOW (user_data));
+}
+
+/*
+ウィンドウを閉じます。
+*/
+static void activate_close (GSimpleAction *action, GVariant *parameter, gpointer user_data)
+{
+	gtk_window_close (GTK_WINDOW (user_data));
 }
 
 /*
@@ -89,14 +109,6 @@ static void activate_fullscreen (GSimpleAction *action, GVariant *parameter, gpo
 }
 
 /*
-ウィンドウを閉じます。
-*/
-static void activate_quit (GSimpleAction *action, GVariant *parameter, gpointer user_data)
-{
-	gtk_window_close (GTK_WINDOW (user_data));
-}
-
-/*
 全画面表示を解除します。
 */
 static void activate_unfullscreen (GSimpleAction *action, GVariant *parameter, gpointer user_data)
@@ -108,24 +120,44 @@ static void activate_unfullscreen (GSimpleAction *action, GVariant *parameter, g
 }
 
 /*
-ウィンドウを閉じます。
-*/
-static void destroy (GtkWidget *widget)
-{
-	GTK_WIDGET_CLASS (SUPER_CLASS)->destroy (widget);
-}
-
-/*
-プロパティを破棄します。
+ウィンドウが破棄される場合に呼び出されます。
+ウィンドウのプロパティを破棄します。
 */
 static void dispose (GObject *object)
 {
 	g_clear_object (&VIEWER_DOCUMENT_WINDOW (object)->file);
+	g_clear_object (&VIEWER_DOCUMENT_WINDOW (object)->pixbuf);
 	G_OBJECT_CLASS (SUPER_CLASS)->dispose (object);
 }
 
 /*
-プロパティを取得します。
+領域が描画される場合に呼び出されます。
+画像を描画します。
+FALSE を返します。
+*/
+static gboolean draw (GtkWidget *widget, cairo_t *cairo, gpointer user_data)
+{
+	int width, height;
+	width = gtk_widget_get_allocated_width (widget);
+	height = gtk_widget_get_allocated_height (widget);
+	cairo_set_source_rgb (cairo, 0.125, 0.25, 0.5);
+	cairo_rectangle (cairo, 0, 0, width, height);
+	cairo_fill (cairo);
+	draw_document (VIEWER_DOCUMENT_WINDOW (user_data), cairo);
+	return FALSE;
+}
+
+static void draw_document (ViewerDocumentWindow *window, cairo_t *cairo)
+{
+	if (window->pixbuf)
+	{
+		gdk_cairo_set_source_pixbuf (cairo, window->pixbuf, 0, 0);
+		cairo_paint (cairo);
+	}
+}
+
+/*
+ウィンドウのプロパティを取得します。
 */
 static void get_property (GObject *object, guint property_id, GValue *value, GParamSpec *pspec)
 {
@@ -141,7 +173,7 @@ static void get_property (GObject *object, guint property_id, GValue *value, GPa
 }
 
 /*
-プロパティを設定します。
+ウィンドウのプロパティを設定します。
 */
 static void set_property (GObject *object, guint property_id, const GValue *value, GParamSpec *pspec)
 {
@@ -157,12 +189,21 @@ static void set_property (GObject *object, guint property_id, const GValue *valu
 }
 
 /*
+ウィンドウの大きさが変更された場合に呼び出されます。
 ウィンドウの大きさを更新します。
 */
 static void size_allocate (GtkWidget *widget, GtkAllocation *allocation)
 {
 	GTK_WIDGET_CLASS (SUPER_CLASS)->size_allocate (widget, allocation);
 	update_window_size (VIEWER_DOCUMENT_WINDOW (widget));
+}
+
+static void update_area (ViewerDocumentWindow *window)
+{
+	if (window->area)
+	{
+		gtk_widget_queue_draw (window->area);
+	}
 }
 
 /*
@@ -172,7 +213,7 @@ static void update_fullscreen_state (ViewerDocumentWindow *window)
 {
 	GAction *action;
 	gboolean state;
-	action = g_action_map_lookup_action (G_ACTION_MAP (window), "fullscreen");
+	action = g_action_map_lookup_action (G_ACTION_MAP (window), ACTION_FULLSCREEN);
 
 	if (G_IS_SIMPLE_ACTION (action))
 	{
@@ -181,8 +222,34 @@ static void update_fullscreen_state (ViewerDocumentWindow *window)
 	}
 }
 
+static void update_pixbuf (ViewerDocumentWindow *window)
+{
+	GFileInputStream *stream;
+	GError *error;
+	error = NULL;
+	stream = g_file_read (window->file, NULL, &error);
+
+	if (window->pixbuf)
+	{
+		g_object_unref (window->pixbuf);
+	}
+	if (stream)
+	{
+		window->pixbuf = gdk_pixbuf_new_from_stream (G_INPUT_STREAM (stream), NULL, &error);
+	}
+	else
+	{
+		window->pixbuf = NULL;
+	}
+	if (error)
+	{
+		viewer_alert_dialog_run (GTK_WINDOW (window), error);
+		g_error_free (error);
+	}
+}
+
 /*
-ウィンドウの大きさを更新します。
+ウィンドウ化時はウィンドウの大きさを更新します。
 */
 static void update_window_size (ViewerDocumentWindow *window)
 {
@@ -210,15 +277,15 @@ static void update_window_state (ViewerDocumentWindow *window, const GdkEventWin
 */
 static void update_window_title (ViewerDocumentWindow *window)
 {
-	char *name;
-	char buffer [256];
+	char *filename;
+	char title [WINDOW_TITLE_CCH];
 
 	if (window->file)
 	{
-		name = g_file_get_basename (window->file);
-		g_snprintf (buffer, G_N_ELEMENTS (buffer), "%s - %s", name, VIEWER_TITLE);
-		gtk_window_set_title (GTK_WINDOW (window), buffer);
-		g_free (name);
+		filename = g_file_get_basename (window->file);
+		g_snprintf (title, WINDOW_TITLE_CCH, WINDOW_TITLE_FORMAT, filename, VIEWER_TITLE);
+		gtk_window_set_title (GTK_WINDOW (window), title);
+		g_free (filename);
 	}
 	else
 	{
@@ -245,10 +312,12 @@ static void viewer_document_window_class_init (ViewerDocumentWindowClass *window
 	G_OBJECT_CLASS (window)->dispose = dispose;
 	G_OBJECT_CLASS (window)->get_property = get_property;
 	G_OBJECT_CLASS (window)->set_property = set_property;
-	GTK_WIDGET_CLASS (window)->destroy = destroy;
 	GTK_WIDGET_CLASS (window)->size_allocate = size_allocate;
 	GTK_WIDGET_CLASS (window)->window_state_event = window_state_event;
 	OBJECT_CLASS_INSTALL_PROPERTY (G_OBJECT_CLASS (window), FILE_PROPERTY, PARAM_SPEC_OBJECT);
+	gtk_widget_class_set_template_from_resource (GTK_WIDGET_CLASS (window), WINDOW_TEMPLATE_NAME);
+	gtk_widget_class_bind_template_child (GTK_WIDGET_CLASS (window), ViewerDocumentWindow, area);
+	gtk_widget_class_bind_template_callback (GTK_WIDGET_CLASS (window), draw);
 }
 
 /*
@@ -268,6 +337,7 @@ static void viewer_document_window_init (ViewerDocumentWindow *window)
 	window->width = WINDOW_DEFAULT_WIDTH;
 	window->height = WINDOW_DEFAULT_HEIGHT;
 	g_action_map_add_action_entries (G_ACTION_MAP (window), ACTION_ENTRIES, G_N_ELEMENTS (ACTION_ENTRIES), window);
+	gtk_widget_init_template (GTK_WIDGET (window));
 }
 
 /*
@@ -293,7 +363,6 @@ GtkWidget *viewer_document_window_new (GtkApplication *application)
 		"application",    application,
 		"default-height", WINDOW_DEFAULT_HEIGHT,
 		"default-width",  WINDOW_DEFAULT_WIDTH,
-		"icon-name",      VIEWER_LOGO_ICON_NAME,
 		"title",          VIEWER_TITLE,
 		NULL);
 }
@@ -330,5 +399,7 @@ void viewer_document_window_set_file (ViewerDocumentWindow *window, GFile *file)
 		}
 
 		update_window_title (window);
+		update_pixbuf (window);
+		update_area (window);
 	}
 }
