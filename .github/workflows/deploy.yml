@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
   app-desktop: include/viewer.desktop
@@ -25,7 +26,9 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v7
       - name: Install Library
-        run: sudo apt-get install -y gettext libgtk-3-dev
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gettext libgtk-3-dev
       - name: Build Artifact
         run: make
       - name: Archive Artifact
