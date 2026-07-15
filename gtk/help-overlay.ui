@@ -39,6 +39,13 @@
 								<property name="visible">true</property>
 							</object>
 						</child>
+						<child>
+							<object class="GtkShortcutsShortcut">
+								<property name="action-name">app.print</property>
+								<property name="title" translatable="true">Print</property>
+								<property name="visible">true</property>
+							</object>
+						</child>
 					</object>
 				</child>
 				<child>

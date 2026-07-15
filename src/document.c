@@ -22,41 +22,42 @@
 /* クラスのプロパティ */
 enum _ViewerDocumentWindowProperties
 {
-	NULL_PROPERTY_ID,
+	INVALID_PROPERTY_ID,
 	FILE_PROPERTY_ID,
+	PIXBUF_PROPERTY_ID,
 };
 
 /* クラスのインスタンス */
 struct _ViewerDocumentWindow
 {
 	GtkApplicationWindow parent_instance;
-	GtkWidget *area; /* 描画領域 */
-	GFile *file; /* ユーザーが開いたファイル */
-	GdkPixbuf *pixbuf;
-	int state; /* 現在のウィンドウの状態 */
-	int width; /* ウィンドウ化した場合のウィンドウの幅 */
-	int height; /* ウィンドウ化した場合のウィンドウの高さ */
+	GtkWidget           *area; /* 描画領域 */
+	GFile               *file; /* ユーザーが開いたファイル */
+	GdkPixbuf           *pixbuf; /* ユーザーが開いたドキュメント */
+	int                  state; /* 現在のウィンドウの状態 */
+	int                  width; /* ウィンドウ化した場合のウィンドウの幅 */
+	int                  height; /* ウィンドウ化した場合のウィンドウの高さ */
 };
 
-static void     activate_about                    (GSimpleAction *action, GVariant *parameter, gpointer user_data);
-static void     activate_close                    (GSimpleAction *action, GVariant *parameter, gpointer user_data);
-static void     activate_fullscreen               (GSimpleAction *action, GVariant *parameter, gpointer user_data);
-static void     activate_unfullscreen             (GSimpleAction *action, GVariant *parameter, gpointer user_data);
-static void     dispose                           (GObject *object);
-static gboolean draw                              (GtkWidget *widget, cairo_t *cairo, gpointer user_data);
-static void     draw_document                     (ViewerDocumentWindow *window, cairo_t *cairo);
-static void     get_property                      (GObject *object, guint property_id, GValue *value, GParamSpec *pspec);
-static void     set_property                      (GObject *object, guint property_id, const GValue *value, GParamSpec *pspec);
-static void     size_allocate                     (GtkWidget *widget, GtkAllocation *allocation);
-static void     update_area                       (ViewerDocumentWindow *window);
-static void     update_fullscreen_state           (ViewerDocumentWindow *window);
-static void     update_pixbuf                     (ViewerDocumentWindow *window);
-static void     update_window_size                (ViewerDocumentWindow *window);
-static void     update_window_state               (ViewerDocumentWindow *window, const GdkEventWindowState *event);
-static void     update_window_title               (ViewerDocumentWindow *window);
-static gboolean window_state_event                (GtkWidget *widget, GdkEventWindowState *event);
-static void     viewer_document_window_class_init (ViewerDocumentWindowClass *window);
-static void     viewer_document_window_init       (ViewerDocumentWindow *window);
+static void       activate_about                    (GSimpleAction *action, GVariant *parameter, gpointer user_data);
+static void       activate_close                    (GSimpleAction *action, GVariant *parameter, gpointer user_data);
+static void       activate_fullscreen               (GSimpleAction *action, GVariant *parameter, gpointer user_data);
+static void       activate_unfullscreen             (GSimpleAction *action, GVariant *parameter, gpointer user_data);
+static void       dispose                           (GObject *object);
+static gboolean   draw                              (GtkWidget *widget, cairo_t *cairo, gpointer user_data);
+static void       draw_document                     (ViewerDocumentWindow *window, cairo_t *cairo);
+static void       get_property                      (GObject *object, guint property_id, GValue *value, GParamSpec *pspec);
+static void       set_property                      (GObject *object, guint property_id, const GValue *value, GParamSpec *pspec);
+static void       size_allocate                     (GtkWidget *widget, GtkAllocation *allocation);
+static void       update_area                       (ViewerDocumentWindow *window);
+static void       update_fullscreen_state           (ViewerDocumentWindow *window);
+static void       update_pixbuf                     (ViewerDocumentWindow *window);
+static void       update_window_size                (ViewerDocumentWindow *window);
+static void       update_window_state               (ViewerDocumentWindow *window, const GdkEventWindowState *event);
+static void       update_window_title               (ViewerDocumentWindow *window);
+static gboolean   window_state_event                (GtkWidget *widget, GdkEventWindowState *event);
+static void       viewer_document_window_class_init (ViewerDocumentWindowClass *window);
+static void       viewer_document_window_init       (ViewerDocumentWindow *window);
 
 /* Viewer Document Window クラス */
 G_DEFINE_FINAL_TYPE (ViewerDocumentWindow, viewer_document_window, GTK_TYPE_APPLICATION_WINDOW);
@@ -137,16 +138,13 @@ FALSE を返します。
 */
 static gboolean draw (GtkWidget *widget, cairo_t *cairo, gpointer user_data)
 {
-	int width, height;
-	width = gtk_widget_get_allocated_width (widget);
-	height = gtk_widget_get_allocated_height (widget);
-	cairo_set_source_rgb (cairo, 0.125, 0.25, 0.5);
-	cairo_rectangle (cairo, 0, 0, width, height);
-	cairo_fill (cairo);
 	draw_document (VIEWER_DOCUMENT_WINDOW (user_data), cairo);
 	return FALSE;
 }
 
+/*
+現在のドキュメントを描画します。
+*/
 static void draw_document (ViewerDocumentWindow *window, cairo_t *cairo)
 {
 	if (window->pixbuf)
@@ -321,12 +319,21 @@ static void viewer_document_window_class_init (ViewerDocumentWindowClass *window
 }
 
 /*
-ドキュメントのファイルを返します。
+開いたドキュメントのファイルを返します。
 この値を開放してはならない。
 */
 GFile *viewer_document_window_get_file (ViewerDocumentWindow *window)
 {
 	return window->file;
+}
+
+/*
+開いたドキュメントの画像を返します。
+この値を開放してはならない。
+*/
+GdkPixbuf *viewer_document_window_get_pixbuf (ViewerDocumentWindow *window)
+{
+	return window->pixbuf;
 }
 
 /*
@@ -379,7 +386,7 @@ void viewer_document_window_save_settings (ViewerDocumentWindow *window, GSettin
 }
 
 /*
-ドキュメントのファイルを指定します。
+開いたドキュメントのファイルを指定します。
 */
 void viewer_document_window_set_file (ViewerDocumentWindow *window, GFile *file)
 {
@@ -401,5 +408,27 @@ void viewer_document_window_set_file (ViewerDocumentWindow *window, GFile *file)
 		update_window_title (window);
 		update_pixbuf (window);
 		update_area (window);
+	}
+}
+
+/*
+開いたドキュメントの画像を指定します。
+*/
+void viewer_document_window_set_pixbuf (ViewerDocumentWindow *window, GdkPixbuf *pixbuf)
+{
+	if (window->pixbuf != NULL)
+	{
+		if (window->pixbuf)
+		{
+			g_object_unref (window->pixbuf);
+		}
+		if (pixbuf)
+		{
+			window->pixbuf = g_object_ref (pixbuf);
+		}
+		else
+		{
+			window->pixbuf = NULL;
+		}
 	}
 }

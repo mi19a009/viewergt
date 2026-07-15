@@ -5,8 +5,8 @@
 #define CANCEL_BUTTON_TEXT      TEXT ("_Cancel")
 #define OPEN_BUTTON_TEXT        TEXT ("_Open")
 #define OPEN_DIALOG_TITLE       TEXT ("Open File")
-#define ANY_FILTER_NAME         "All Files"
-#define IMAGE_FILTER_NAME       "Image Files"
+#define ALL_FILE_FILTER_NAME    "All Files"
+#define IMAGE_FILE_FILTER_NAME  "Image Files"
 
 /* ファイル フィルター */
 typedef struct _ViewerFileFilterEntry
@@ -16,14 +16,14 @@ typedef struct _ViewerFileFilterEntry
 } ViewerFileFilterEntry;
 
 /* すべてのファイル フィルター */
-static const char *ANY_FILTER_PATTERNS [] =
+static const char *ALL_FILE_FILTER_PATTERNS [] =
 {
-	"*.*",
+	"*",
 	NULL,
 };
 
 /* 画像ファイル フィルター */
-static const char *IMAGE_FILTER_PATTERNS [] =
+static const char *IMAGE_FILE_FILTER_PATTERNS [] =
 {
 	"*.avif",
 	"*.bmp",
@@ -38,8 +38,8 @@ static const char *IMAGE_FILTER_PATTERNS [] =
 /* ファイルを開くダイアログのフィルター */
 static const ViewerFileFilterEntry OPEN_FILTER_ENTRIES [] =
 {
-	{ IMAGE_FILTER_NAME, IMAGE_FILTER_PATTERNS },
-	{ ANY_FILTER_NAME,   ANY_FILTER_PATTERNS   },
+	{ IMAGE_FILE_FILTER_NAME, IMAGE_FILE_FILTER_PATTERNS },
+	{ ALL_FILE_FILTER_NAME,   ALL_FILE_FILTER_PATTERNS   },
 };
 
 /*
@@ -62,7 +62,7 @@ static void add (GtkFileChooser *chooser, const ViewerFileFilterEntry *entries, 
 			patterns++;
 		}
 
-		gtk_file_filter_set_name (filter, entries->name);
+		gtk_file_filter_set_name (filter, TEXT (entries->name));
 		gtk_file_chooser_add_filter (chooser, filter);
 		entries++;
 	}
