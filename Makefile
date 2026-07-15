@@ -1,7 +1,7 @@
 # !/usr/bin/make
 APP      = $(HOME)/.local/share/applications/$(APPID).desktop
 APPID    = com.github.mi19a009.PictureViewer
-C        = about app document main resource
+C        = about alert app document file main print resource
 CFLAGS   = -Iinclude -Wall $(shell pkg-config gtk+-3.0 --cflags)
 DEBUG    = -O0 -g -rdynamic
 DNDEBUG  = -O2 -DNDEBUG -DG_DISABLE_ASSERT -DG_DISABLE_CAST_CHECKS
