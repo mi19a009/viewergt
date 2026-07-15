@@ -50,6 +50,7 @@ static void       get_property                      (GObject *object, guint prop
 static void       set_property                      (GObject *object, guint property_id, const GValue *value, GParamSpec *pspec);
 static void       size_allocate                     (GtkWidget *widget, GtkAllocation *allocation);
 static void       update_area                       (ViewerDocumentWindow *window);
+static void       update_area_size                  (ViewerDocumentWindow *window);
 static void       update_fullscreen_state           (ViewerDocumentWindow *window);
 static void       update_pixbuf                     (ViewerDocumentWindow *window);
 static void       update_window_size                (ViewerDocumentWindow *window);
@@ -204,6 +205,27 @@ static void update_area (ViewerDocumentWindow *window)
 	}
 }
 
+static void update_area_size (ViewerDocumentWindow *window)
+{
+	int width, height;
+
+	if (window->area)
+	{
+		if (window->pixbuf)
+		{
+			width = gdk_pixbuf_get_width (window->pixbuf);
+			height = gdk_pixbuf_get_height (window->pixbuf);
+		}
+		else
+		{
+			width = 0;
+			height = 0;
+		}
+
+		gtk_widget_set_size_request (window->area, width, height);
+	}
+}
+
 /*
 フルスクリーン時はメニュー項目にチェックを付けます。
 */
@@ -244,6 +266,8 @@ static void update_pixbuf (ViewerDocumentWindow *window)
 		viewer_alert_dialog_run (GTK_WINDOW (window), error);
 		g_error_free (error);
 	}
+
+	update_area_size (window);
 }
 
 /*
