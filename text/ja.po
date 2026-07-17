@@ -1,0 +1,8 @@
+msgid  ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+msgid  "_Quit"
+msgstr "終了(_Q)"
+msgid  "Picture Viewer"
+msgstr "ピクチャ ビューアー"
