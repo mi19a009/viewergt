@@ -1,7 +1,9 @@
 # Git Attributes
 *.c             text
+*.css           text
 *.desktop       text
 *.h             text
+*.html          text
 *.md            text
 *.po            text
 *.svg           text diff=xml

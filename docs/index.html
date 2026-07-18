@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="stylesheet" href="style.css" type="text/css" />
+<title>ピクチャ ビューアー</title>
+</head>
+<body>
+<h1>ピクチャ ビューアー</h1>
+<p>GTK 版ピクチャ ビューアー。</p>
+<nav>
+	<ul>
+		<li><a href="#repository">リポジトリ</a></li>
+		<li><a href="#viewer">Viewer モジュール</a>
+			<ul>
+				<li><a href="#viewer-about-dialog">Viewer About Dialog オブジェクト</a></li>
+				<li><a href="#viewer-application">Viewer Application クラス</a></li>
+				<li><a href="#viewer-document">Viewer Document インターフェース</a></li>
+				<li><a href="#viewer-document-window">Viewer Document Window クラス</a></li>
+				<li><a href="#viewer-window-settings">Viewer Window Settings インターフェース</a></li>
+			</ul>
+		</li>
+	</ul>
+</nav>
+<main>
+<h2 id="repository">リポジトリ</h2>
+<p>
+	リポジトリの内容を以下に示します。
+</p>
+<dl>
+	<dt>bin ディレクトリ</dt>
+	<dd>Makefile が生成した実行可能ファイルとメッセージ カタログを格納します。</dd>
+	<dt>docs ディレクトリ</dt>
+	<dd>リポジトリを説明するファイルを格納します。</dd>
+	<dt>gtk ディレクトリ</dt>
+	<dd>GTK ユーザー インターフェース テンプレートを格納します。</dd>
+	<dt>icons ディレクトリ</dt>
+	<dd>GTK アプリケーションが使用する画像を格納します。</dd>
+	<dt>include ディレクトリ</dt>
+	<dd>GTK アプリケーションを宣言するファイルを格納します。</dd>
+	<dt>obj ディレクトリ</dt>
+	<dd>Makefile が生成したオブジェクト ファイルを格納します。</dd>
+	<dt>src ディレクトリ</dt>
+	<dd>アプリケーションを実装するファイルを格納します。</dd>
+	<dt>text ディレクトリ</dt>
+	<dd>メッセージ カタログを格納します。</dd>
+</dl>
+<h2 id="viewer">Viewer モジュール</h2>
+<h3 id="viewer-about-dialog">Viewer About Dialog オブジェクト</h3>
+<p>
+	バージョン情報ダイアログ ボックスを表します。
+	UI テンプレートからウィジェットを作成します。
+</p>
+<h3 id="viewer-application">Viewer Application クラス</h3>
+<p>
+	GTK アプリケーションを表します。
+	ユーザーが選択した印刷設定を格納します。
+	ドキュメント ウィンドウを作成して表示します。
+</p>
+<p>
+	オブジェクトのプロパティを以下に示します。
+</p>
+<dl>
+	<dt>Debug プロパティ</dt>
+	<dd>
+		この値が TRUE である場合はウィンドウの設定を使用しません。
+		起動時に --debug オプションを指定してこのプロパティを TRUE にします。
+	</dd>
+</dl>
+<h3 id="viewer-document">Viewer Document インターフェース</h3>
+<p>
+	オブジェクトがドキュメントを所有していることを表します。
+	ドキュメントを取得する方法を提供します。
+</p>
+<h3 id="viewer-document-window">Viewer Document Window クラス</h3>
+<p>
+	アプリケーションが起動した際に表示されるウィンドウです。
+	ユーザーが開いたオブジェクトを所有します。
+</p>
+<h3 id="viewer-window-settings">Viewer Window Settings インターフェース</h3>
+<p>
+	ウィンドウの設定を読み書きする方法を提供します。
+</p>
+<p>
+	このインターフェースが提供するメソッドを以下に示します。
+</p>
+<dl>
+	<dt>Load メソッド</dt>
+	<dd>ウィンドウの設定を読み込んで適用します。</dd>
+	<dt>Save メソッド</dt>
+	<dd>ウィンドウの設定を書き込みます。</dd>
+</dl>
+</main>
+<p>
+	Copyright © 2026 Taichi Murakami.
+</p>
+</body>
+</html>
