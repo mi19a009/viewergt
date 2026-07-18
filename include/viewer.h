@@ -19,5 +19,6 @@ G_DECLARE_FINAL_TYPE (ViewerDocumentWindow, viewer_document_window, VIEWER, DOCU
 void viewer_init_locale (void);
 
 /* Viewer 型 */
+GtkWidget    *viewer_about_dialog_new    (void);
 GApplication *viewer_application_new     (const char *application_id);
 GtkWidget    *viewer_document_window_new (GtkApplication *application);

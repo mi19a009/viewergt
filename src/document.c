@@ -5,6 +5,8 @@ Copyright (C) 2026 Taichi Murakami.
 #include <gtk/gtk.h>
 #include <glib/gi18n.h>
 #include "viewer.h"
+#define ABOUT_ACTION_ACTIVATE           callback_about
+#define ABOUT_ACTION_NAME               "show-about"
 #define APPLICATION_PROPERTY            "application"
 #define DEFAULT_HEIGHT                  400
 #define DEFAULT_HEIGHT_PROPERTY         "default-height"
@@ -14,6 +16,7 @@ Copyright (C) 2026 Taichi Murakami.
 #define SUPER_CLASS                     viewer_document_window_parent_class
 #define TITLE_PROPERTY                  "title"
 #define WIDGET_TEMPLATE_NAME            (VIEWER_APPLICATION_PATH "/gtk/document.ui")
+#define ACTION_ENTRY(ACTION)            { ACTION ##_NAME, ACTION ##_ACTIVATE }
 
 /* クラスのインスタンス */
 struct _ViewerDocumentWindow
@@ -23,6 +26,7 @@ struct _ViewerDocumentWindow
 };
 
 static void dispose                           (GObject *object);
+static void callback_about                    (GSimpleAction *action, GVariant *parameter, gpointer user_data);
 static void callback_draw                     (GtkDrawingArea *area, cairo_t *cairo, int width, int height, gpointer user_data);
 static void viewer_document_window_class_init (ViewerDocumentWindowClass *this_class);
 static void viewer_document_window_init       (ViewerDocumentWindow *window);
@@ -34,6 +38,12 @@ static void viewer_document_window_init       (ViewerDocumentWindow *window);
 */
 G_DEFINE_FINAL_TYPE (ViewerDocumentWindow, viewer_document_window, GTK_TYPE_APPLICATION_WINDOW);
 
+/* メニュー項目のアクション */
+static const GActionEntry ACTION_ENTRIES [] =
+{
+	ACTION_ENTRY (ABOUT_ACTION),
+};
+
 /*
 クラスのインスタンスを破棄します。
 */
@@ -41,6 +51,17 @@ static void dispose (GObject *object)
 {
 	gtk_widget_dispose_template (GTK_WIDGET (object), VIEWER_TYPE_DOCUMENT_WINDOW);
 	G_OBJECT_CLASS (SUPER_CLASS)->dispose (object);
+}
+
+/*
+バージョン情報を表示します。
+*/
+static void callback_about (GSimpleAction *action, GVariant *parameter, gpointer user_data)
+{
+	GtkWidget *dialog;
+	dialog = viewer_about_dialog_new ();
+	gtk_window_set_transient_for (GTK_WINDOW (dialog), GTK_WINDOW (user_data));
+	gtk_window_present (GTK_WINDOW (dialog));
 }
 
 /*
@@ -68,6 +89,7 @@ static void viewer_document_window_class_init (ViewerDocumentWindowClass *this_c
 */
 static void viewer_document_window_init (ViewerDocumentWindow *window)
 {
+	g_action_map_add_action_entries (G_ACTION_MAP (window), ACTION_ENTRIES, G_N_ELEMENTS (ACTION_ENTRIES), window);
 	gtk_widget_init_template (GTK_WIDGET (window));
 	gtk_drawing_area_set_draw_func (GTK_DRAWING_AREA (window->canvas), callback_draw, window, NULL);
 }
