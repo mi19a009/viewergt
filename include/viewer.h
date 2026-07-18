@@ -5,6 +5,7 @@ Copyright (C) 2026 Taichi Murakami.
 #include <gtk/gtk.h>
 #define TEXT(QUOTE)                     (gettext (QUOTE))
 #define VIEWER_APPLICATION_ID           "com.github.mi19a009.PictureViewer"
+#define VIEWER_APPLICATION_PATH         "/com/github/mi19a009/PictureViewer"
 #define VIEWER_APPLICATION_TITLE        TEXT ("Picture Viewer")
 #define VIEWER_APPLICATION_ICON_NAME    "viewer"
 #define VIEWER_TYPE_APPLICATION         (viewer_application_get_type     ())

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<interface>
+	<template class="ViewerDocumentWindow">
+		<child>
+			<object class="GtkScrolledWindow">
+				<property name="hexpand">TRUE</property>
+				<property name="vexpand">TRUE</property>
+				<child>
+					<object class="GtkDrawingArea" id="canvas" />
+				</child>
+			</object>
+		</child>
+	</template>
+</interface>
