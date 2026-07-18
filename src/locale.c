@@ -1,27 +1,25 @@
-/*
-Copyright (C) 2026 Taichi Murakami.
-メッセージ カタログの使用方法を提供します。
-*/
+/* Copyright (C) 2026 Taichi Murakami. */
 #include <glib/gi18n.h>
 #include <locale.h>
+#include "viewer.h"
+#define LOCALE_CODESET          "UTF-8"
+#define LOCALE_LINK             "/proc/self/exe"
+#define LOCALE_NAME             ""
 
-/*
-メッセージ カタログへのパスを指定します。
-*/
 void viewer_init_locale (void)
 {
 	GError *error;
 	char *path, *dir, *base;
-	setlocale (LC_ALL, "");
+	setlocale (LC_ALL, LOCALE_NAME);
 	error = NULL;
-	path = g_file_read_link ("/proc/self/exe", &error);
+	path = g_file_read_link (LOCALE_LINK, &error);
 
 	if (path)
 	{
 		dir = g_path_get_dirname (path);
 		base = g_path_get_basename (path);
 		bindtextdomain (base, dir);
-		bind_textdomain_codeset (base, "UTF-8");
+		bind_textdomain_codeset (base, LOCALE_CODESET);
 		textdomain (base);
 		g_free (base);
 		g_free (dir);
@@ -29,7 +27,7 @@ void viewer_init_locale (void)
 	}
 	if (error)
 	{
-		g_log (G_LOG_DOMAIN, G_LOG_LEVEL_ERROR, "%d. %s", error->code, error->message);
+		viewer_show_error (NULL, error);
 		g_error_free (error);
 	}
 }

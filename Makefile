@@ -15,7 +15,7 @@ ICONS    = $(wildcard icons/scalable/actions/*.svg)
 LIBS     = $(shell pkg-config --libs gtk4)
 LINGUAS  = ja
 LOCALE   = $(LINGUAS:%=bin/%/LC_MESSAGES/viewer.mo)
-MODULE   = about app document iface locale main
+MODULE   = about alert app document iface locale main
 OBJ      = $(addprefix obj/, $(addsuffix .o, $(MODULE)))
 RESOURCE = obj/resource.o
 SCHEMA   = $(USR)/share/glib-2.0/schemas/$(APPID).gschema.xml

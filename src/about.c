@@ -1,15 +1,9 @@
-/*
-Copyright (C) 2026 Taichi Murakami.
-バージョン情報ダイアログを表示する方法を提供します。
-*/
+/* Copyright (C) 2026 Taichi Murakami. */
 #include <gtk/gtk.h>
 #include "viewer.h"
 #define RESOURCE_NAME "dialog"
 #define RESOURCE_PATH (VIEWER_APPLICATION_PATH "/gtk/about.ui")
 
-/*
-リソースからウィジェットを取得します。
-*/
 GtkWidget *viewer_about_dialog_new (void)
 {
 	GtkBuilder *builder;

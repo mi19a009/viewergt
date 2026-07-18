@@ -9,10 +9,20 @@ Copyright (C) 2026 Taichi Murakami.
 #define VIEWER_APPLICATION_TITLE        TEXT ("Picture Viewer")
 #define VIEWER_APPLICATION_ICON_NAME    "viewer"
 #define VIEWER_TYPE_APPLICATION         (viewer_application_get_type     ())
+#define VIEWER_TYPE_DOCUMENT            (viewer_document_get_type        ())
 #define VIEWER_TYPE_DOCUMENT_WINDOW     (viewer_document_window_get_type ())
 #define VIEWER_TYPE_WINDOW_SETTINGS     (viewer_window_settings_get_type ())
 
+typedef struct _ViewerDocument       ViewerDocument;
 typedef struct _ViewerWindowSettings ViewerWindowSettings;
+
+struct _ViewerDocumentInterface
+{
+	GTypeInterface g_iface;
+	GFile     *(*get_file)  (ViewerDocument *self);
+	GdkPixbuf *(*get_image) (ViewerDocument *self);
+	gboolean   (*load)      (ViewerDocument *self, GFile *file, GError **error);
+};
 
 struct _ViewerWindowSettingsInterface
 {
@@ -21,19 +31,21 @@ struct _ViewerWindowSettingsInterface
 	void (* save) (ViewerWindowSettings *self, GSettings *settings);
 };
 
-/* Viewer モジュール */
 G_DECLARE_FINAL_TYPE (ViewerApplication,    viewer_application,     VIEWER, APPLICATION,     GtkApplication);
+G_DECLARE_INTERFACE  (ViewerDocument,       viewer_document,        VIEWER, DOCUMENT,        GObject);
 G_DECLARE_FINAL_TYPE (ViewerDocumentWindow, viewer_document_window, VIEWER, DOCUMENT_WINDOW, GtkApplicationWindow);
 G_DECLARE_INTERFACE  (ViewerWindowSettings, viewer_window_settings, VIEWER, WINDOW_SETTINGS, GtkWindow);
 
-/* Viewer 関数 */
 void viewer_init_locale (void);
+void viewer_show_error (GtkWindow *parent, const GError *error);
 
-/* Viewer 型 */
 GtkWidget    *viewer_about_dialog_new    (void);
 GApplication *viewer_application_new     (const char *application_id);
 GtkWidget    *viewer_document_window_new (GtkApplication *application);
 
-/* Viewer Window Settings 型 */
+GFile     *viewer_document_get_file  (ViewerDocument *document);
+GdkPixbuf *viewer_document_get_image (ViewerDocument *document);
+gboolean   viewer_document_load      (ViewerDocument *document, GFile *file, GError **error);
+
 void viewer_window_settings_load (ViewerWindowSettings *window, GSettings *settings);
 void viewer_window_settings_save (ViewerWindowSettings *window, GSettings *settings);
