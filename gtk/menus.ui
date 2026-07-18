@@ -15,6 +15,12 @@
 			</section>
 			<section>
 				<item>
+					<attribute name="label" translatable="yes">_Print..</attribute>
+					<attribute name="action">app.print</attribute>
+				</item>
+			</section>
+			<section>
+				<item>
 					<attribute name="label" translatable="yes">_Quit</attribute>
 					<attribute name="action">window.close</attribute>
 				</item>

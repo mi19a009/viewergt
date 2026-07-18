@@ -18,6 +18,7 @@
 				<li><a href="#viewer-application">Viewer Application クラス</a></li>
 				<li><a href="#viewer-document">Viewer Document インターフェース</a></li>
 				<li><a href="#viewer-document-window">Viewer Document Window クラス</a></li>
+				<li><a href="#viewer-print-operation">Viewer Print Operation クラス</a></li>
 				<li><a href="#viewer-window-settings">Viewer Window Settings インターフェース</a></li>
 			</ul>
 		</li>
@@ -59,6 +60,10 @@
 	ドキュメント ウィンドウを作成して表示します。
 </p>
 <p>
+	このクラスは GTK Application クラスを継承します。
+	このクラスを継承することはできません。
+</p>
+<p>
 	オブジェクトのプロパティを以下に示します。
 </p>
 <dl>
@@ -67,18 +72,64 @@
 		この値が TRUE である場合はウィンドウの設定を使用しません。
 		起動時に --debug オプションを指定してこのプロパティを TRUE にします。
 	</dd>
+	<dt>Print Settings プロパティ</dt>
+	<dd>
+		ユーザーが選択した印刷設定を格納します。
+	</dd>
 </dl>
 <h3 id="viewer-document">Viewer Document インターフェース</h3>
 <p>
 	オブジェクトがドキュメントを所有していることを表します。
 	ドキュメントを取得する方法を提供します。
 </p>
+<p>
+	このインターフェースが提供するメソッドを以下に示します。
+</p>
+<dl>
+	<dt>Get File メソッド</dt>
+	<dd>
+		ユーザーが開いたファイルを返します。
+		この値を開放してはならない。
+	</dd>
+	<dt>Get Image メソッド</dt>
+	<dd>
+		ユーザーが開いた画像を返します。
+		この値を開放してはならない。
+	</dd>
+	<dt>Load メソッド</dt>
+	<dd>
+		指定したファイルを開きます。
+		指定したファイルの読込が成功した場合は開いたファイルと開いた画像を更新します。
+	</dd>
+</dl>
 <h3 id="viewer-document-window">Viewer Document Window クラス</h3>
 <p>
 	アプリケーションが起動した際に表示されるウィンドウです。
 	ユーザーが開いた画像を所有します。
 	描画領域に画像を表示します。
 </p>
+<p>
+	このクラスは GTK Application Window クラスを継承します。
+	このクラスを継承することはできません。
+</p>
+<h3 id="viewer-print-operation">Viewer Print Operation クラス</h3>
+<p>
+	ドキュメントを印刷する機能を提供します。
+	指定したドキュメントを描画します。
+</p>
+<p>
+	このクラスは GTK Print Operation クラスを継承します。
+	このクラスを継承することはできません。
+</p>
+<p>
+	オブジェクトのプロパティを以下に示します。
+</p>
+<dl>
+	<dt>Document プロパティ</dt>
+	<dd>
+		印刷する画像を取得または設定します。
+	</dd>
+</dl>
 <h3 id="viewer-window-settings">Viewer Window Settings インターフェース</h3>
 <p>
 	ウィンドウの設定を読み書きする方法を提供します。

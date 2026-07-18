@@ -17,6 +17,9 @@
 #define NEW_ACTION_DETAILED_NAME        "app.new"
 #define NEW_ACTION_NAME                 "new"
 #define OPTION_ENTRIES_MAX              G_N_ELEMENTS (OPTION_ENTRIES)
+#define PRINT_ACTION_ACTIVATE           activate_print
+#define PRINT_ACTION_DETAILED_NAME      "app.print"
+#define PRINT_ACTION_NAME               "print"
 #define SIGNAL_DESTROY                  "destroy"
 #define WINDOW_SETTINGS                 (VIEWER_APPLICATION_ID ".window")
 #define ACCEL_ENTRY(ACTION)             { ACTION ##_DETAILED_NAME, ACTION ##_ACCELS }
@@ -40,6 +43,7 @@ struct _ViewerApplication
 static void       accelerate         (GtkApplication *application);
 static void       activate           (GApplication *application);
 static void       activate_new       (GSimpleAction *action, GVariant *parameter, gpointer user_data);
+static void       activate_print     (GSimpleAction *action, GVariant *parameter, gpointer user_data);
 static void       add_options        (ViewerApplication *application);
 static void       constructed        (GObject *object);
 static GtkWidget *create_window      (ViewerApplication *application);
@@ -50,6 +54,7 @@ static void       get_property       (GObject *object, guint property_id, GValue
 static void       load_document      (ViewerDocument *document, GFile *file, GtkWindow *parent);
 static void       load_window        (ViewerWindowSettings *window);
 static void       open               (GApplication *application, GFile **files, int n_files, const char *hint);
+static void       print              (ViewerApplication *application, ViewerDocument *document, GtkWindow *parent);
 static void       save_window        (ViewerWindowSettings *window);
 static void       set_property       (GObject *object, guint property_id, const GValue *value, GParamSpec *pspec);
 static void       startup            (GApplication *application);
@@ -63,17 +68,20 @@ G_DEFINE_FINAL_TYPE (ViewerApplication, viewer_application, GTK_TYPE_APPLICATION
 DEFINE_ACCELS (CLOSE_ACTION_ACCELS, "<Ctrl>q");
 DEFINE_ACCELS (HELP_ACTION_ACCELS, "<Ctrl>F1", "<Ctrl>question", "<Ctrl>slash");
 DEFINE_ACCELS (NEW_ACTION_ACCELS, "<Ctrl>n");
+DEFINE_ACCELS (PRINT_ACTION_ACCELS, "<Ctrl>p");
 
 static const ViewerApplicationAccelEntry ACCEL_ENTRIES [] =
 {
 	ACCEL_ENTRY (CLOSE_ACTION),
 	ACCEL_ENTRY (HELP_ACTION),
 	ACCEL_ENTRY (NEW_ACTION),
+	ACCEL_ENTRY (PRINT_ACTION),
 };
 
 static const GActionEntry ACTION_ENTRIES [] =
 {
 	ACTION_ENTRY (NEW_ACTION),
+	ACTION_ENTRY (PRINT_ACTION),
 };
 
 static const GOptionEntry OPTION_ENTRIES [] =
@@ -112,6 +120,17 @@ static void activate_new (GSimpleAction *action, GVariant *parameter, gpointer u
 	GtkWidget *window;
 	window = create_window (VIEWER_APPLICATION (user_data));
 	gtk_window_present (GTK_WINDOW (window));
+}
+
+static void activate_print (GSimpleAction *action, GVariant *parameter, gpointer user_data)
+{
+	GtkWindow *window;
+	window = gtk_application_get_active_window (GTK_APPLICATION (user_data));
+
+	if (VIEWER_IS_DOCUMENT (window))
+	{
+		print (VIEWER_APPLICATION (user_data), VIEWER_DOCUMENT (window), window);
+	}
 }
 
 static void add_options (ViewerApplication *application)
@@ -225,6 +244,39 @@ static void open (GApplication *application, GFile **files, int n_files, const c
 	}
 }
 
+static void print (ViewerApplication *application, ViewerDocument *document, GtkWindow *parent)
+{
+	GtkPrintOperation *operation;
+	GtkPrintSettings *settings;
+	GdkPixbuf *pixbuf;
+	GError *error;
+	pixbuf = viewer_document_get_image (document);
+
+	if (pixbuf)
+	{
+		error = NULL;
+		settings = application->print_settings;
+		operation = viewer_print_operation_new ();
+		gtk_print_operation_set_embed_page_setup (operation, TRUE);
+		gtk_print_operation_set_print_settings (operation, settings);
+		viewer_print_operation_set_document (VIEWER_PRINT_OPERATION (operation), pixbuf);
+		gtk_print_operation_run (operation, GTK_PRINT_OPERATION_ACTION_PRINT_DIALOG, parent, &error);
+		settings = gtk_print_operation_get_print_settings (operation);
+
+		if (error)
+		{
+			viewer_show_error (parent, error);
+			g_error_free (error);
+		}
+		if (settings)
+		{
+			viewer_application_set_print_settings (application, settings);
+		}
+
+		g_object_unref (operation);
+	}
+}
+
 static void save_window (ViewerWindowSettings *window)
 {
 	GSettings *settings;
@@ -267,6 +319,22 @@ static void viewer_application_class_init (ViewerApplicationClass *application)
 	g_application_class_init (G_APPLICATION_CLASS (application));
 }
 
+GtkPrintSettings *viewer_application_get_print_settings (ViewerApplication *application)
+{
+	GtkPrintSettings *settings;
+
+	if (application->print_settings)
+	{
+		settings = g_object_ref (application->print_settings);
+	}
+	else
+	{
+		settings = NULL;
+	}
+
+	return settings;
+}
+
 static void viewer_application_init (ViewerApplication *application)
 {
 }
@@ -277,4 +345,23 @@ GApplication *viewer_application_new (const char *application_id)
 		APPLICATION_ID_PROPERTY,    application_id,
 		APPLICATION_FLAGS_PROPERTY, APPLICATION_FLAGS,
 		NULL);
+}
+
+void viewer_application_set_print_settings (ViewerApplication *application, GtkPrintSettings *settings)
+{
+	if (application->print_settings != settings)
+	{
+		if (application->print_settings)
+		{
+			g_object_unref (application->print_settings);
+		}
+		if (settings)
+		{
+			application->print_settings = g_object_ref (settings);
+		}
+		else
+		{
+			application->print_settings = NULL;
+		}
+	}
 }
